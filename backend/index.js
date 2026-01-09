@@ -2,9 +2,10 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/connectDB.js";
+import route from "./routes/authRoutes.js";
 
 dotenv.config();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT;
 
 const app = express();
 
@@ -18,10 +19,12 @@ app.use(
     credentials: true,
   })
 );
+app.use("/api/auth", route );
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is working" });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
