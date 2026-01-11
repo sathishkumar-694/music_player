@@ -11,11 +11,9 @@ dotenv.config();
    JWT TOKEN CREATOR
 ======================= */
 const createToken = (userId) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRY }
-  );
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRY,
+  });
 };
 
 /* =======================
@@ -180,10 +178,7 @@ const resetPassword = async (req, res) => {
         .json({ message: "Password must be at least 6 characters" });
     }
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -191,9 +186,7 @@ const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "Token is invalid or expired" });
+      return res.status(400).json({ message: "Token is invalid or expired" });
     }
 
     user.password = password;
@@ -202,22 +195,66 @@ const resetPassword = async (req, res) => {
 
     await user.save();
 
-    return res
-      .status(200)
-      .json({ message: "Password reset successful" });
+    return res.status(200).json({ message: "Password reset successful" });
   } catch (error) {
     console.error("reset password error", error.message);
     return res.status(500).json({ message: "Something went wrong" });
   }
 };
+const editProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "not authenicated" });
+    }
+    const { name, email, avatar, currentPassword, newPassword } = req.body;
+    const user = await User.findById(userId);
 
+    if (name) user.name = name;
+    if (email) user.email = email;
+
+    if (currentPassword || newPassword) {
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+          message: "both the current and new pass required",
+        });
+      }
+
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res.status(400).json({ message: "current pass is incorrect" });
+      }
+      if (newPassword.length < 6)
+        return res
+          .status(400)
+          .json({ message: "password len should be atleast 6 characters" });
+      user.password = newPassword;
+    }
+
+    if (avatar) {
+      const uploadResponse = await imagekit.upload({
+        file: avatar,
+        fileName: `avatar_${userId}_${Date.now()}.jpg`,
+        folder: "/music-player",
+      });
+      user.avatar = uploadResponse.url;
+    }
+    await user.save();
+    return res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.error("edit profile error", error.message);
+    return res.status(500).json({ message: "error in updating profile" });
+  }
+};
 /* =======================
    EXPORTS
 ======================= */
-export {
-  signup,
-  login,
-  getMe,
-  forgotPassword,
-  resetPassword,
-};
+export { signup, login, getMe, forgotPassword, resetPassword, editProfile };

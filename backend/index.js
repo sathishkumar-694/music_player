@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/connectDB.js";
 import route from "./routes/authRoutes.js";
+import songRouter from "./routes/songRoutes.js";
 
 dotenv.config();
 const PORT = process.env.PORT;
@@ -20,10 +21,11 @@ app.use(
   })
 );
 app.use("/api/auth", route );
-
+app.use("/api/song",songRouter );
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is working" });
 });
+
 
 
 app.listen(PORT, () => {

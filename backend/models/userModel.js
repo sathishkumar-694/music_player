@@ -27,8 +27,21 @@ const userSchema = new mongoose.Schema({
   resetPasswordTokenExpire: {
     type: Date,
   },
+  favourites:[{
+    id:
+    {
+      type: String , 
+      required:true
+    },
+    name :String , 
+    artist_name : String , 
+    image : String ,
+    duration :String,
+    audio:String
+  },
+],
 });
-
+//pre saving function for password
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
